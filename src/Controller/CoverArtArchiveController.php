@@ -10,7 +10,6 @@ use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
 
 class CoverArtArchiveController extends AbstractController
 {
-    private mixed $coverArtService;
     private CoverArtArchiveService $coverArtArchiveService;
 
     public function __construct(CoverArtArchiveService $coverArtArchiveService)
@@ -24,19 +23,25 @@ class CoverArtArchiveController extends AbstractController
         try {
             $coverArt = $this->coverArtArchiveService->getCoverArt($mbid);
         } catch (ClientExceptionInterface $e) {
-            return $this->json(['error' => 'Cover art not found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => $e], Response::HTTP_NOT_FOUND);
         }
 
-        $coverArts = [];
-        foreach ($coverArt as $c) {
-            $coverArts[] = $c['thumbnails']['1200'];
-        }
-        //dd($coverArts);
+        $images = array_map(function ($c) {
+            return $c['thumbnails']['1200'] ?? null;
+        }, $coverArt);
 
         return $this->render('cover_art_archive/index.html.twig', [
             'title' => 'Cover Art Archive',
-            'images' => $coverArts
+            'images' => $images
         ]);
         //return $this->json($coverArt);
+    }
+
+    #[Route('home', name: 'home')]
+    public function home(): Response
+    {
+        return $this->render('cover_art_archive/home.html.twig', [
+            'title' => 'Cover Art Archive Home',
+        ]);
     }
 }
